@@ -57,15 +57,15 @@ def generate_launch_description():
     mit_mode = LaunchConfiguration('mit_mode')
     ctrl_rate = LaunchConfiguration('ctrl_rate')
 
-    # 2. 创建基本启动描述
+    # 2. Create base launch description
     ld = LaunchDescription(declared_arguments)
     
-    # 3. 添加条件设置 - 必须在节点之前
-    # 修正表达式语法：使用单引号包裹整个表达式
+    # 3. Add conditional settings - must occur before nodes
+    # Fix expression syntax: wrap the whole expression in single quotes
     ld.add_action(SetLaunchConfiguration(
         'sub_name',
         value=PythonExpression([
-            "'sensor' if '",  # 注意单引号
+            "'sensor' if '",  # Note: single quotes
             LaunchConfiguration('name'),
             "' == 'gripper' else ''"
         ])
@@ -74,13 +74,13 @@ def generate_launch_description():
     ld.add_action(SetLaunchConfiguration(
         'ctrl',
         value=PythonExpression([
-            "'data' if '",   # 注意单引号
+            "'data' if '",   # Note: single quotes
             LaunchConfiguration('name'),
             "' == 'gripper' else 'ctrl'"
         ])
     ))
     
-    # 4. 添加调试日志
+    # 4. Add debug logs
     ld.add_action(LogInfo(msg=['DEBUG: name = ', LaunchConfiguration('name')]))
     ld.add_action(LogInfo(msg=['DEBUG: sub_name = ', LaunchConfiguration('sub_name')]))
     ld.add_action(LogInfo(msg=['DEBUG: ctrl = ', LaunchConfiguration('ctrl')]))

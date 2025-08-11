@@ -28,7 +28,7 @@ void BaseRealSenseNode::getParameters()
     _camera_name = _parameters->setParam<std::string>(param_name, "camera");
     std::string node_namespace = _node.get_namespace();
     if (node_namespace != "/" && !node_namespace.empty()) {
-        // 确保namespace以/开头但不以/结尾
+        // Ensure namespace does not end with '/' and does not start with '/'
         if (node_namespace.back() == '/') {
             node_namespace.pop_back();
         }

@@ -25,8 +25,8 @@ class RosOperator(Node):
         self.camera_config_publisher = None
         self.camera_frame_id = None
         self.tf_broadcaster = None
-        self.running = False  # 添加运行状态标志
-        self.camera_thread = None  # 添加线程引用
+        self.running = False  # Running state flag
+        self.camera_thread = None  # Thread reference
         self.init_ros()
 
     def init_ros(self):
@@ -72,7 +72,7 @@ class RosOperator(Node):
                 return True
             else:
                 if self.cap:
-                    self.cap.release()  # 释放失败的摄像头
+                    self.cap.release()  # Release camera if previously opened and failed
                 continue
         return False
     
@@ -91,13 +91,13 @@ class RosOperator(Node):
             self.cleanup_camera()
 
     def cleanup_camera(self):
-        """清理摄像头资源"""
+        """Clean up camera resources"""
         if self.cap and self.cap.isOpened():
             self.cap.release()
             self.get_logger().info("Camera released")
     
     def stop(self):
-        """停止摄像头操作"""
+        """Stop camera operation"""
         self.running = False
         if self.camera_thread and self.camera_thread.is_alive():
             self.camera_thread.join(timeout=2.0)  # 等待线程结束
@@ -125,11 +125,11 @@ class RosOperator(Node):
         self.tf_broadcaster.sendTransform(t)
 
 
-# 全局变量用于信号处理
+# Global variable for signal handling
 ros_operator_instance = None
 
 def signal_handler(signum, frame):
-    """信号处理函数"""
+    """Signal handler"""
     print(f"\nReceived signal {signum}, shutting down gracefully...")
     if ros_operator_instance:
         ros_operator_instance.stop()
@@ -139,9 +139,9 @@ def signal_handler(signum, frame):
 def main():
     global ros_operator_instance
     
-    # 注册信号处理器
+    # Register signal handlers
     signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
-    signal.signal(signal.SIGTERM, signal_handler)  # kill命令
+    signal.signal(signal.SIGTERM, signal_handler)  # kill command
     
     rclpy.init()
     ros_operator_instance = RosOperator()
@@ -150,7 +150,7 @@ def main():
         if ros_operator_instance.init_camera():
             print("camera opened")
             ros_operator_instance.camera_thread = threading.Thread(target=ros_operator_instance.run)
-            ros_operator_instance.camera_thread.daemon = True  # 设置为守护线程
+            ros_operator_instance.camera_thread.daemon = True  # Set as daemon thread
             ros_operator_instance.camera_thread.start()
             rclpy.spin(ros_operator_instance)
         else:
@@ -158,7 +158,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        # 确保资源清理
+        # Ensure resources are cleaned up
         if ros_operator_instance:
             ros_operator_instance.stop()
         rclpy.shutdown()

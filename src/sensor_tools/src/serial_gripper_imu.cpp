@@ -543,16 +543,16 @@ class RosOperator: public rclcpp::Node{
 
 	int c2i(char ch)  
 	{  
-			// 如果是数字，则用数字的ASCII码减去48, 如果ch = '2' ,则 '2' - 48 = 2  
+			// If digit: ASCII code minus 48, e.g., '2' - 48 = 2  
 			if(isdigit(ch))  
 					return ch - 48;  
 	
-			// 如果是字母，但不是A~F,a~f则返回  
+			// If letter but not A~F or a~f: return  
 			if( ch < 'A' || (ch > 'F' && ch < 'a') || ch > 'z' )  
 					return -1;  
 	
-			// 如果是大写字母，则用数字的ASCII码减去55, 如果ch = 'A' ,则 'A' - 55 = 10  
-			// 如果是小写字母，则用数字的ASCII码减去87, 如果ch = 'a' ,则 'a' - 87 = 10  
+			// If uppercase letter: ASCII code minus 55, e.g., 'A' - 55 = 10  
+			// If lowercase letter: ASCII code minus 87, e.g., 'a' - 87 = 10  
 			if(isalpha(ch))  
 					return isupper(ch) ? ch - 55 : ch - 87;  
 	
@@ -567,27 +567,27 @@ class RosOperator: public rclcpp::Node{
 			int bits;  
 			int i;  
 			
-			// 此例中 hex = "1de" 长度为3, hex是main函数传递的  
+			// Example: hex = "1de" has length 3; hex is passed from main  
 			len = strlen(hex);  
 	
 			for (i=0, temp=0; i<len; i++, temp=0)  
 			{  
-					// 第一次：i=0, *(hex + i) = *(hex + 0) = '1', 即temp = 1  
-					// 第二次：i=1, *(hex + i) = *(hex + 1) = 'd', 即temp = 13  
-					// 第三次：i=2, *(hex + i) = *(hex + 2) = 'd', 即temp = 14  
+					// First: i=0, *(hex + 0) = '1', so temp = 1  
+					// Second: i=1, *(hex + 1) = 'd', so temp = 13  
+					// Third: i=2, *(hex + 2) = 'e', so temp = 14  
 					temp = c2i( *(hex + i) );  
-					// 总共3位，一个16进制位用 4 bit保存  
-					// 第一次：'1'为最高位，所以temp左移 (len - i -1) * 4 = 2 * 4 = 8 位  
-					// 第二次：'d'为次高位，所以temp左移 (len - i -1) * 4 = 1 * 4 = 4 位  
-					// 第三次：'e'为最低位，所以temp左移 (len - i -1) * 4 = 0 * 4 = 0 位  
+					// Total 3 hex digits, each hex digit uses 4 bits  
+					// First: '1' is the highest nibble, shift temp by (len - i - 1) * 4 = 8 bits  
+					// Second: 'd' is the middle nibble, shift temp by 4 bits  
+					// Third: 'e' is the lowest nibble, shift temp by 0 bits  
 					bits = (len - i - 1) * 4;  
 					temp = temp << bits;  
 	
-					// 此处也可以用 num += temp;进行累加  
+					// Could also do num += temp here  
 					num = num | temp;  
 			}  
 	
-			// 返回结果  
+			// Return result  
 			return num;  
 	}  
 
@@ -599,11 +599,11 @@ class RosOperator: public rclcpp::Node{
 		return width;
 	}
 
-    // 反向求解函数，输入 width，输出 angle，使用二分法
+    // Inverse solve: input width, output angle, using binary search
     double getAngle(double targetWidth, double tol = 1e-6, int maxIterations = 1000) {
-        // 定义角度的搜索范围
+        // Define angle search range
         double left = 0.0;
-        double right = M_PI; // 假设角度在0到90度之间
+        double right = M_PI; // Assume angle is between 0 and 90 degrees
 
         for (int i = 0; i < maxIterations; ++i) {
             double mid = (left + right) / 2;
@@ -620,7 +620,7 @@ class RosOperator: public rclcpp::Node{
             }
         }
         
-        // 如果没有找到精确解，返回最后的中间值
+        // If no exact solution found, return last midpoint
         return (left + right) / 2;
     }
 

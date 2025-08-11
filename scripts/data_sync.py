@@ -17,23 +17,23 @@ from typing import List, Dict, Tuple, Optional
 
 
 class TimeSeries:
-    """时间序列数据项"""
+    """Time-series data item"""
     def __init__(self, time: float, data_list: List, sync_list: List):
         self.time = time
         self.data_list = data_list
         self.sync_list = sync_list
 
     def to_data_list(self):
-        """将数据添加到数据列表"""
+        """Append this item to the data list"""
         self.data_list.append(self)
 
     def to_sync_list(self):
-        """将数据添加到同步列表"""
+        """Append this item to the sync list"""
         self.sync_list.append(self)
 
 
 class Operator:
-    """数据同步器"""
+    """Data synchronizer"""
     
     def __init__(self, args):
         self.args = args
@@ -47,10 +47,10 @@ class Operator:
         self.all_time_series: List[TimeSeries] = []
 
     def init_directories(self):
-        """初始化数据目录路径"""
+        """Initialize data directory paths"""
         self.episode_dir = os.path.join(self.args.datasetDir, self.args.episodeName)
         
-        # 构建各类数据的目录路径
+        # Build per-modality directory paths
         self.camera_color_dirs = [os.path.join(self.episode_dir, "camera/color", name) for name in self.args.cameraColorNames]
         self.camera_depth_dirs = [os.path.join(self.episode_dir, "camera/depth", name) for name in self.args.cameraDepthNames]
         self.camera_point_cloud_dirs = [os.path.join(self.episode_dir, "camera/pointCloud", name) for name in self.args.cameraPointCloudNames]
@@ -64,8 +64,8 @@ class Operator:
         self.lift_motor_dirs = [os.path.join(self.episode_dir, "lift/motor", name) for name in self.args.liftMotorNames]
 
     def init_time_series(self):
-        """初始化时间序列存储结构"""
-        # 数据时间序列
+        """Initialize time-series storage structures"""
+        # Data time-series containers
         self.camera_color_data_time_series = [[] for _ in self.args.cameraColorNames]
         self.camera_depth_data_time_series = [[] for _ in self.args.cameraDepthNames]
         self.camera_point_cloud_data_time_series = [[] for _ in self.args.cameraPointCloudNames]
@@ -78,7 +78,7 @@ class Operator:
         self.robot_base_vel_data_time_series = [[] for _ in self.args.robotBaseVelNames]
         self.lift_motor_data_time_series = [[] for _ in self.args.liftMotorNames]
         
-        # 同步时间序列
+        # Sync time-series containers
         self.camera_color_sync_time_series = [[] for _ in self.args.cameraColorNames]
         self.camera_depth_sync_time_series = [[] for _ in self.args.cameraDepthNames]
         self.camera_point_cloud_sync_time_series = [[] for _ in self.args.cameraPointCloudNames]
@@ -91,7 +91,7 @@ class Operator:
         self.robot_base_vel_sync_time_series = [[] for _ in self.args.robotBaseVelNames]
         self.lift_motor_sync_time_series = [[] for _ in self.args.liftMotorNames]
         
-        # 文件扩展名
+        # File extensions per modality
         self.camera_color_exts = [".jpg"] * len(self.args.cameraColorNames)
         self.camera_depth_exts = [".png"] * len(self.args.cameraDepthNames)
         self.camera_point_cloud_exts = [".pcd"] * len(self.args.cameraPointCloudNames)
@@ -105,7 +105,7 @@ class Operator:
         self.lift_motor_exts = [".json"] * len(self.args.liftMotorNames)
 
     def get_files_in_path(self, path: str, ext: str, data_list: List, sync_list: List) -> int:
-        """获取指定路径下指定扩展名的文件，并按时间戳排序"""
+        """Collect files with the given extension in path, sorted by timestamp"""
         count = 0
         if not os.path.exists(path):
             print(f"Warning: Directory {path} does not exist")
@@ -114,20 +114,20 @@ class Operator:
         for filename in os.listdir(path):
             if filename.endswith(ext):
                 try:
-                    # 从文件名提取时间戳
+                    # Extract timestamp from filename
                     timestamp = float(filename[:filename.rfind(".")])
                     time_series = TimeSeries(timestamp, data_list, sync_list)
                     self.all_time_series.append(time_series)
                     count += 1
                 except ValueError:
-                    # 跳过无法解析时间戳的文件
+                    # Skip files whose timestamp cannot be parsed
                     continue
         return count
 
     def load_all_time_series(self):
-        """加载所有数据源的时间序列"""
+        """Load time-series for all data sources"""
         
-        # 加载各类数据的时间戳
+        # Load timestamps per modality
         for i, name in enumerate(self.args.cameraColorNames):
             count = self.get_files_in_path(self.camera_color_dirs[i], ".jpg", 
                                          self.camera_color_data_time_series[i], 
@@ -189,15 +189,15 @@ class Operator:
                                          self.lift_motor_data_time_series[i], 
                                          self.lift_motor_sync_time_series[i])
 
-        # 按时间戳排序所有时间序列
+        # Sort all collected time-series by timestamp
         self.all_time_series.sort(key=lambda x: x.time)
 
     def check_data_adequacy(self, print_info: bool = False) -> Optional[float]:
-        """检查数据充足性，返回最早的可用时间戳"""
+        """Check data availability and return the earliest usable timestamp"""
         result = True
         time = float('inf')
         
-        # 检查所有数据源是否都有数据
+        # Check each data source has data
         for i, name in enumerate(self.args.cameraColorNames):
             if len(self.camera_color_data_time_series[i]) == 0:
                 if print_info:
@@ -289,7 +289,7 @@ class Operator:
         return time if result else None
 
     def find_closest_index(self, data_series: List[TimeSeries], target_time: float) -> Tuple[int, float]:
-        """找到最接近目标时间的数据索引"""
+        """Find index of the item closest to target_time"""
         if not data_series:
             return -1, float('inf')
         
@@ -305,7 +305,7 @@ class Operator:
         return closest_index, closest_diff
 
     def sync(self):
-        """执行数据同步"""
+        """Perform data synchronization"""
         frame_count = 0
         
         print(f"All time series: {len(self.all_time_series)}")
@@ -315,11 +315,11 @@ class Operator:
             frame_time = self.check_data_adequacy()
             
             if frame_time is not None:
-                # 为每个数据源找到最接近的时间戳
+                # For each modality, find the closest timestamp
                 time_diff_pass = True
                 closest_indices = {}
                 
-                # 检查相机彩色数据
+                # Camera color data
                 for i, name in enumerate(self.args.cameraColorNames):
                     if not time_diff_pass:
                         break
@@ -331,7 +331,7 @@ class Operator:
                             break
                         closest_indices[f'camera_color_{i}'] = closest_idx
                 
-                # 检查相机深度数据
+                # Camera depth data
                 for i, name in enumerate(self.args.cameraDepthNames):
                     if not time_diff_pass:
                         break
@@ -343,7 +343,7 @@ class Operator:
                             break
                         closest_indices[f'camera_depth_{i}'] = closest_idx
                 
-                # 检查机械臂关节状态
+                # Arm joint state
                 for i, name in enumerate(self.args.armJointStateNames):
                     if not time_diff_pass:
                         break
@@ -355,7 +355,7 @@ class Operator:
                             break
                         closest_indices[f'arm_joint_state_{i}'] = closest_idx
                 
-                # 检查定位姿态数据
+                # Localization pose data
                 for i, name in enumerate(self.args.localizationPoseNames):
                     if not time_diff_pass:
                         break
@@ -367,7 +367,7 @@ class Operator:
                             break
                         closest_indices[f'localization_pose_{i}'] = closest_idx
                 
-                # 检查相机点云数据
+                # Camera point cloud data
                 for i, name in enumerate(self.args.cameraPointCloudNames):
                     if not time_diff_pass:
                         break
@@ -379,7 +379,7 @@ class Operator:
                             break
                         closest_indices[f'camera_point_cloud_{i}'] = closest_idx
                 
-                # 检查机械臂末端位姿数据
+                # Arm end-effector pose data
                 for i, name in enumerate(self.args.armEndPoseNames):
                     if not time_diff_pass:
                         break
@@ -391,7 +391,7 @@ class Operator:
                             break
                         closest_indices[f'arm_end_pose_{i}'] = closest_idx
                 
-                # 检查夹爪编码器数据
+                # Gripper encoder data
                 for i, name in enumerate(self.args.gripperEncoderNames):
                     if not time_diff_pass:
                         break
@@ -403,7 +403,7 @@ class Operator:
                             break
                         closest_indices[f'gripper_encoder_{i}'] = closest_idx
                 
-                # 检查IMU 9轴数据
+                # IMU 9-axis data
                 for i, name in enumerate(self.args.imu9AxisNames):
                     if not time_diff_pass:
                         break
@@ -415,7 +415,7 @@ class Operator:
                             break
                         closest_indices[f'imu_9axis_{i}'] = closest_idx
                 
-                # 检查激光雷达点云数据
+                # Lidar point cloud data
                 for i, name in enumerate(self.args.lidarPointCloudNames):
                     if not time_diff_pass:
                         break
@@ -427,7 +427,7 @@ class Operator:
                             break
                         closest_indices[f'lidar_point_cloud_{i}'] = closest_idx
                 
-                # 检查机器人底盘速度数据
+                # Robot base velocity data
                 for i, name in enumerate(self.args.robotBaseVelNames):
                     if not time_diff_pass:
                         break
@@ -439,7 +439,7 @@ class Operator:
                             break
                         closest_indices[f'robot_base_vel_{i}'] = closest_idx
                 
-                # 检查升降电机数据
+                # Lift motor data
                 for i, name in enumerate(self.args.liftMotorNames):
                     if not time_diff_pass:
                         break
@@ -451,80 +451,66 @@ class Operator:
                             break
                         closest_indices[f'lift_motor_{i}'] = closest_idx
                 
-                # 如果时间差检查通过，将数据加入同步列表
+                # If time-difference checks pass, add data to sync lists
                 if time_diff_pass:
-                    # 添加相机彩色数据到同步列表
+                    # Append camera color data to sync list
                     for i, name in enumerate(self.args.cameraColorNames):
                         if f'camera_color_{i}' in closest_indices:
                             idx = closest_indices[f'camera_color_{i}']
                             self.camera_color_data_time_series[i][idx].to_sync_list()
-                            # 删除已处理的数据
+                            # Remove processed items from data lists
                             del self.camera_color_data_time_series[i][:idx+1]
                     
-                    # 添加相机深度数据到同步列表
+                    # Append camera depth data to sync list
                     for i, name in enumerate(self.args.cameraDepthNames):
                         if f'camera_depth_{i}' in closest_indices:
                             idx = closest_indices[f'camera_depth_{i}']
                             self.camera_depth_data_time_series[i][idx].to_sync_list()
                             del self.camera_depth_data_time_series[i][:idx+1]
                     
-                    # 添加相机点云数据到同步列表
+                    # Append camera point cloud data to sync list
                     for i, name in enumerate(self.args.cameraPointCloudNames):
                         if f'camera_point_cloud_{i}' in closest_indices:
                             idx = closest_indices[f'camera_point_cloud_{i}']
                             self.camera_point_cloud_data_time_series[i][idx].to_sync_list()
                             del self.camera_point_cloud_data_time_series[i][:idx+1]
                     
-                    # 添加机械臂关节状态到同步列表
-                    for i, name in enumerate(self.args.armJointStateNames):
-                        if f'arm_joint_state_{i}' in closest_indices:
-                            idx = closest_indices[f'arm_joint_state_{i}']
-                            self.arm_joint_state_data_time_series[i][idx].to_sync_list()
-                            del self.arm_joint_state_data_time_series[i][:idx+1]
-                    
-                    # 添加机械臂末端位姿到同步列表
-                    for i, name in enumerate(self.args.armEndPoseNames):
-                        if f'arm_end_pose_{i}' in closest_indices:
-                            idx = closest_indices[f'arm_end_pose_{i}']
-                            self.arm_end_pose_data_time_series[i][idx].to_sync_list()
-                            del self.arm_end_pose_data_time_series[i][:idx+1]
-                    
-                    # 添加定位姿态数据到同步列表
+                    # Append localization pose data to sync list
                     for i, name in enumerate(self.args.localizationPoseNames):
                         if f'localization_pose_{i}' in closest_indices:
                             idx = closest_indices[f'localization_pose_{i}']
                             self.localization_pose_data_time_series[i][idx].to_sync_list()
                             del self.localization_pose_data_time_series[i][:idx+1]
                     
-                    # 添加夹爪编码器数据到同步列表
+                    # Append gripper encoder data to sync list
                     for i, name in enumerate(self.args.gripperEncoderNames):
                         if f'gripper_encoder_{i}' in closest_indices:
                             idx = closest_indices[f'gripper_encoder_{i}']
                             self.gripper_encoder_data_time_series[i][idx].to_sync_list()
                             del self.gripper_encoder_data_time_series[i][:idx+1]
                     
-                    # 添加IMU 9轴数据到同步列表
+                    # Append IMU 9-axis data to sync list
                     for i, name in enumerate(self.args.imu9AxisNames):
                         if f'imu_9axis_{i}' in closest_indices:
                             idx = closest_indices[f'imu_9axis_{i}']
                             self.imu_9axis_data_time_series[i][idx].to_sync_list()
                             del self.imu_9axis_data_time_series[i][:idx+1]
                     
-                    # 添加激光雷达点云数据到同步列表
+                    # Append lidar point cloud data to sync list
                     for i, name in enumerate(self.args.lidarPointCloudNames):
                         if f'lidar_point_cloud_{i}' in closest_indices:
                             idx = closest_indices[f'lidar_point_cloud_{i}']
                             self.lidar_point_cloud_data_time_series[i][idx].to_sync_list()
                             del self.lidar_point_cloud_data_time_series[i][:idx+1]
                     
-                    # 添加机器人底盘速度数据到同步列表
+                    # Append robot base velocity data to sync list
                     for i, name in enumerate(self.args.robotBaseVelNames):
                         if f'robot_base_vel_{i}' in closest_indices:
                             idx = closest_indices[f'robot_base_vel_{i}']
                             self.robot_base_vel_data_time_series[i][idx].to_sync_list()
                             del self.robot_base_vel_data_time_series[i][:idx+1]
                     
-                    # 添加升降电机数据到同步列表
+                    # Append lift motor data to sync list
                     for i, name in enumerate(self.args.liftMotorNames):
                         if f'lift_motor_{i}' in closest_indices:
                             idx = closest_indices[f'lift_motor_{i}']
@@ -537,13 +523,13 @@ class Operator:
         if frame_count == 0:
             self.check_data_adequacy(True)
 
-        # 写入同步文件
+        # Write sync files
         self.write_sync_files()
 
     def write_sync_files(self):
-        """写入同步文件"""
+        """Write sync files"""
         
-        # 写入相机彩色数据同步文件
+        # Write camera color sync files
         for i, name in enumerate(self.args.cameraColorNames):
             sync_file_path = os.path.join(self.camera_color_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -551,7 +537,7 @@ class Operator:
                 for time_series in self.camera_color_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.camera_color_exts[i]}\n")
 
-        # 写入相机深度数据同步文件
+        # Write camera depth sync files
         for i, name in enumerate(self.args.cameraDepthNames):
             sync_file_path = os.path.join(self.camera_depth_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -559,7 +545,7 @@ class Operator:
                 for time_series in self.camera_depth_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.camera_depth_exts[i]}\n")
 
-        # 写入机械臂关节状态同步文件
+        # Write arm joint state sync files
         for i, name in enumerate(self.args.armJointStateNames):
             sync_file_path = os.path.join(self.arm_joint_state_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -567,7 +553,7 @@ class Operator:
                 for time_series in self.arm_joint_state_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.arm_joint_state_exts[i]}\n")
 
-        # 写入定位姿态同步文件
+        # Write localization pose sync files
         for i, name in enumerate(self.args.localizationPoseNames):
             sync_file_path = os.path.join(self.localization_pose_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -575,7 +561,7 @@ class Operator:
                 for time_series in self.localization_pose_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.localization_pose_exts[i]}\n")
 
-        # 写入相机点云数据同步文件
+        # Write camera point cloud sync files
         for i, name in enumerate(self.args.cameraPointCloudNames):
             sync_file_path = os.path.join(self.camera_point_cloud_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -583,7 +569,7 @@ class Operator:
                 for time_series in self.camera_point_cloud_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.camera_point_cloud_exts[i]}\n")
 
-        # 写入机械臂末端位姿同步文件
+        # Write arm end-effector pose sync files
         for i, name in enumerate(self.args.armEndPoseNames):
             sync_file_path = os.path.join(self.arm_end_pose_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -591,7 +577,7 @@ class Operator:
                 for time_series in self.arm_end_pose_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.arm_end_pose_exts[i]}\n")
 
-        # 写入夹爪编码器同步文件
+        # Write gripper encoder sync files
         for i, name in enumerate(self.args.gripperEncoderNames):
             sync_file_path = os.path.join(self.gripper_encoder_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -599,7 +585,7 @@ class Operator:
                 for time_series in self.gripper_encoder_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.gripper_encoder_exts[i]}\n")
 
-        # 写入IMU 9轴数据同步文件
+        # Write IMU 9-axis sync files
         for i, name in enumerate(self.args.imu9AxisNames):
             sync_file_path = os.path.join(self.imu_9axis_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -607,7 +593,7 @@ class Operator:
                 for time_series in self.imu_9axis_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.imu_9axis_exts[i]}\n")
 
-        # 写入激光雷达点云同步文件
+        # Write lidar point cloud sync files
         for i, name in enumerate(self.args.lidarPointCloudNames):
             sync_file_path = os.path.join(self.lidar_point_cloud_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -615,7 +601,7 @@ class Operator:
                 for time_series in self.lidar_point_cloud_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.lidar_point_cloud_exts[i]}\n")
 
-        # 写入机器人底盘速度同步文件
+        # Write robot base velocity sync files
         for i, name in enumerate(self.args.robotBaseVelNames):
             sync_file_path = os.path.join(self.robot_base_vel_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
@@ -623,7 +609,7 @@ class Operator:
                 for time_series in self.robot_base_vel_sync_time_series[i]:
                     f.write(f"{time_series.time:.6f}{self.robot_base_vel_exts[i]}\n")
 
-        # 写入升降电机同步文件
+        # Write lift motor sync files
         for i, name in enumerate(self.args.liftMotorNames):
             sync_file_path = os.path.join(self.lift_motor_dirs[i], "sync.txt")
             os.makedirs(os.path.dirname(sync_file_path), exist_ok=True)
