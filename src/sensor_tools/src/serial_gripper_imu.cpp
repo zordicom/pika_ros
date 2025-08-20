@@ -258,7 +258,7 @@ class RosOperator: public rclcpp::Node{
 			serial->set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
 			serial->set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
 			serial->set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
-			
+
 			pubGripper = create_publisher<data_msgs::msg::Gripper>("/gripper/data", 1);
 			subGripper = this->create_subscription<data_msgs::msg::Gripper>("gripper/ctrl", 1, std::bind(&RosOperator::gripperCtrlHandler, this, std::placeholders::_1));
 			pubImu = create_publisher<sensor_msgs::msg::Imu>("/imu/data", 1);
@@ -266,6 +266,7 @@ class RosOperator: public rclcpp::Node{
 			subJointStateCtrl = this->create_subscription<sensor_msgs::msg::JointState>("/gripper/joint_state_ctrl", 1, std::bind(&RosOperator::jointStateCtrlHandler, this, std::placeholders::_1));
 			subJointStateInfo = this->create_subscription<sensor_msgs::msg::JointState>("/joint_state_info", 1, std::bind(&RosOperator::jointStateInfoHandler, this, std::placeholders::_1));
 			pubArmJointStateWithGripper = create_publisher<sensor_msgs::msg::JointState>("/joint_state_gripper", 1);
+
 			subDataCaptureStatus = this->create_subscription<data_msgs::msg::CaptureStatus>("/data_capture_status", 1, std::bind(&RosOperator::dataCaptureStatusHandler, this, std::placeholders::_1));
 			subTeleopStatus = this->create_subscription<data_msgs::msg::TeleopStatus>("/teleop_status", 1, std::bind(&RosOperator::teleopStatusHandler, this, std::placeholders::_1));
 			subLocalizationStatus = this->create_subscription<data_msgs::msg::LocalizationStatus>("/localization_status", 1, std::bind(&RosOperator::localizationStatusHandler, this, std::placeholders::_1));

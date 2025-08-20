@@ -40,3 +40,22 @@ For more information, see the Pika Product User Manual (CN) and PIKA FAQ (CN).
 - ROS: humble
 
 
+## Quick Start Links
+
+- PikaSense setup and data collection: see `SETUP.md` (clone/build, device IDs, launch, record).
+- Optional HTC Vive tracking in RViz (Steam-free at runtime): also in `SETUP.md` → “Optional: HTC Vive tracking in RViz”.
+
+### TL;DR Vive + ROS 2
+
+1) Pair tracker once in SteamVR (then close SteamVR).
+2) Install udev rules, replug dongle.
+3) Build/run Vive TF bridge:
+```bash
+cd ~/ros2_ws/src && git clone https://github.com/asymingt/libsurvive_ros2.git
+cd ~/ros2_ws && rosdep update && rosdep install --from-paths src --ignore-src -r -y
+colcon build --packages-select libsurvive_ros2 && source ~/ros2_ws/install/setup.bash
+ros2 launch libsurvive_ros2 libsurvive_ros2.launch.py
+```
+4) RViz: Fixed Frame = parent from `/tf` (e.g., `libsurvive_world`); add TF.
+
+

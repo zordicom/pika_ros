@@ -103,6 +103,46 @@ ros2 launch sensor_tools open_multi_sensor.launch.py \
   - Image: `/camera(_l|_r)?/color/image_raw`, `/camera_fisheye_(l|r)/color/image_raw`
   - Optional PointCloud2: `/camera/depth/color/points` (enable below)
 
+## Optional: HTC Vive tracking in RViz (Steam-free at runtime)
+
+1) Pair once in SteamVR, then close SteamVR
+- Install Steam → install “SteamVR” from the Store → launch it.
+- Power base stations (LEDs green), plug watchman dongle, power Vive tracker.
+- SteamVR → Devices → Pair Controller → Vive Tracker (hold the small triangular Pair button until it blinks blue). When the icon goes green, CLOSE SteamVR.
+
+2) USB permissions (udev rules)
+```bash
+sudo curl -fsSL https://raw.githubusercontent.com/cntools/libsurvive/master/useful_files/81-vive.rules \
+  -o /etc/udev/rules.d/81-vive.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+Unplug/replug the dongle.
+
+3) Install and run the Vive TF bridge
+```bash
+cd ~/ros2_ws/src
+git clone https://github.com/asymingt/libsurvive_ros2.git
+cd ~/ros2_ws
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --packages-select libsurvive_ros2
+source ~/ros2_ws/install/setup.bash
+ros2 launch libsurvive_ros2 libsurvive_ros2.launch.py
+```
+
+4) Verify /tf and LHR frames
+```bash
+ros2 topic echo /tf --once | grep -m1 'frame_id:' | awk '{print $2}'
+ros2 topic echo /tf --once | grep 'child_frame_id:' | head
+```
+
+5) RViz
+- Fixed Frame: set to the parent from the first command (e.g., `libsurvive_world`). Add TF display; enable Names/Axes.
+
+Tips
+- Swap dongle ports safely (stop bridge → replug → relaunch). Orange LED = charging; unplug USB‑C to track.
+- Multiple trackers: A single watchman dongle can technically pair with more than one tracker, but reliability is significantly better with one dongle per tracker. For dual PikaSense trackers, use two dongles.
+
 ## Record data
 - MCAP (dated folder; dual config):
 ```bash
